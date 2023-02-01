@@ -6,10 +6,20 @@ import pandas as pd
 app = Flask(__name__)
 
 
-# on the terminal type: curl "http://127.0.0.1:5000/rates?date_from=2016-01-01&date_to=2016-01-10&origin=CNSGH&destination=north_europe_main"
-# returns a json response with relevant data when we use GET.
 @app.route('/rates', methods = ['GET'])
 def home():
+    '''
+        Captures the dates, origin and destination and returns the average price for the said said between orign and destination. 
+        To access it on the terminal type: 
+        curl "http://127.0.0.1:5000/rates?date_from=2016-01-01&date_to=2016-01-10&origin=CNSGH&destination=north_europe_main"
+        or http://127.0.0.1:5000/rates?date_from=2016-01-01&date_to=2016-01-10&origin=CNSGH&destination=north_europe_main on any browser or postman.
+        url: http://127.0.0.1:5000/rates
+        params: date_from: date
+                date_to:date
+                origin:string
+                destination:string
+        returns: A json response with dates and average price
+    '''
     if(request.method == 'GET'):
         try:
             args = request.args
@@ -24,7 +34,7 @@ def home():
                 data_df = pd.DataFrame(cur.fetchall())
 
             if not data_df.empty:      
-                #creating a date_list dataframe to make sure all the dates within the provides dates i.e date_from and date_to are included in the response
+                #creating a date_list dataframe to make sure all the dates between recieved date_from and date_to are included in the response
                 date_list = pd.DataFrame(pd.date_range(start= date_from, end = date_to), columns=[0])
                 data = get_final_data(data_df, date_list)
             else:
@@ -38,10 +48,10 @@ def home():
 
 
 
-
-
-# to connect with the db
 def get_db_connection():
+    '''
+        method to connect to postgres db instance
+    '''
     conn = psycopg2.connect(host='localhost',
                             database='postgres',
                             user='postgres',
@@ -80,8 +90,11 @@ query = '''
         '''
 
 
-# to reformat, merge and create the final df to be sent as response
 def get_final_data(db_data_df, date_list):
+    '''
+        Method to reformat dates, merge and create the final df to be sent as response
+    '''
+
     db_data_df[0] = pd.to_datetime(db_data_df[0]).dt.strftime('%Y-%d-%d')
 
     date_list[0] = pd.to_datetime(date_list[0]).dt.strftime('%Y-%d-%d')
