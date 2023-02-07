@@ -1,9 +1,19 @@
 from flask import Flask, jsonify, request
 import psycopg2
 import pandas as pd
+# https://pypi.org/project/pydantic/
+from pydantic import BaseModel
+from datetime import date
   
 # creating a Flask app
 app = Flask(__name__)
+
+
+class Params(BaseModel):
+    date_from: date
+    date_to: date
+    origin: str
+    destination: str
 
 
 @app.route('/rates', methods = ['GET'])
@@ -22,11 +32,13 @@ def home():
     '''
     if(request.method == 'GET'):
         try:
-            args = request.args
-            date_from = args.get('date_from')
-            date_to = args.get('date_to')
-            origin = args.get('origin')
-            destination = args.get('destination')
+            parameters = request.args
+            args = Params(**parameters)
+
+            date_from = args.date_from
+            date_to = args.date_to
+            origin = args.origin
+            destination = args.destination
             
             conn = get_db_connection()
             with conn.cursor() as cur:
@@ -41,8 +53,8 @@ def home():
                 return jsonify({'Message': 'Ah oh! looks like we dont have the data for your search at the moment, do retry in some time.'})
             
             return jsonify(data)
-        except Exception:
-            return jsonify({'Message': 'Facing technical issues, do retry in some time.'})
+        except Exception as e:
+            return jsonify({'Message': 'Facing technical issues, do retry in some time. ' + repr(e)})
     else:
         return jsonify({'Message': 'Please retry with GET method.'})
 
